@@ -1,0 +1,69 @@
+#!/bin/bash
+
+# Comandos útiles para el Proyecto 3 - Sistemas Operativos 1
+# Estudiante: 202200129
+
+# ===== CONEXIÓN A ZOT =====
+# Conectar a la VM de Zot Registry
+gcloud compute ssh zot-registry-202200129 --zone us-central1-a
+
+# ===== GESTIÓN DE KUBERNETES =====
+# Conectar al cluster de GKE
+gcloud container clusters get-credentials gke-sopes3-202200129 --zone us-central1-c
+
+# Ver todos los pods del proyecto
+kubectl get pods -n proyecto3-202200129
+
+# Ver servicios
+kubectl get services -n proyecto3-202200129
+
+# Ver logs de un servicio (ejemplo: rust-api)
+kubectl logs -n proyecto3-202200129 deployment/rust-api
+
+# Eliminar todo el despliegue (para reiniciar)
+kubectl delete namespace proyecto3-202200129
+
+# ===== PRUEBAS DE API =====
+# Enviar un tweet de prueba (sustituir <INGRESS_IP> con la IP real)
+curl -X POST http://<INGRESS_IP>/tweet \
+  -H "Content-Type: application/json" \
+  -d '{"municipality":"chinautla","temperature":27.5,"humidity":65.2,"timestamp":1698585600}'
+
+# ===== MONITOREO =====
+# Forwarding de puertos para acceso local a Grafana (alternativa al ingress)
+kubectl port-forward -n proyecto3-202200129 service/grafana 3000:3000
+
+# Forwarding de puertos para acceso local a Prometheus (alternativa al ingress)
+kubectl port-forward -n proyecto3-202200129 service/prometheus 9090:9090
+
+# ===== DOCKER Y ZOT =====
+# Verificar imágenes en registro Zot
+curl http://localhost:5000/v2/_catalog
+
+# Etiquetar una imagen para Zot
+docker tag 202200129/rust-api:1.0.0 localhost:5000/202200129/rust-api:1.0.0
+
+# Publicar una imagen en Zot
+docker push localhost:5000/202200129/rust-api:1.0.0
+
+# ===== VALKEY =====
+# Acceder a la consola de Valkey
+kubectl exec -it -n proyecto3-202200129 deployment/valkey -- redis-cli
+
+# Comandos útiles en Valkey
+# Listar todas las claves
+KEYS *
+
+# Obtener un valor específico (ejemplo para municipio chinautla)
+GET chinautla:latest
+HGETALL chinautla:stats
+
+# ===== MENSAJERÍA =====
+# Ver tópicos de Kafka
+kubectl exec -n proyecto3-202200129 -it kafka-0 -- bin/kafka-topics.sh --list --bootstrap-server kafka:9092
+
+# Consumir mensajes de un tópico Kafka para depuración
+kubectl exec -n proyecto3-202200129 -it kafka-0 -- bin/kafka-console-consumer.sh --topic weather_tweets --from-beginning --bootstrap-server kafka:9092
+
+# Verificar estado de RabbitMQ
+kubectl exec -n proyecto3-202200129 -it deployment/rabbitmq -- rabbitmqctl list_queues

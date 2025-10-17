@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbit-writer-deployment
+  namespace: proyecto3-202200129
+  labels:
+    app: rabbit-writer
+    student: "202200129"
+spec:
+  replicas: 1  # También se probará con 2 réplicas para comparar rendimiento
+  selector:
+    matchLabels:
+      app: rabbit-writer
+  template:
+    metadata:
+      labels:
+        app: rabbit-writer
+    spec:
+      containers:
+      - name: rabbit-writer
+        image: zot-registry:5000/202200129/rabbit-writer:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 50052  # Puerto gRPC
+        - containerPort: 9091   # Puerto para métricas Prometheus
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        env:
+        - name: RABBITMQ_URL
+          value: "amqp://guest:guest@rabbitmq-service:5672/"
+        - name: RABBITMQ_QUEUE
+          value: "weather-tweets"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbit-writer
+  namespace: proyecto3-202200129
+spec:
+  selector:
+    app: rabbit-writer
+  ports:
+  - name: grpc
+    port: 50052
+    targetPort: 50052
+  - name: metrics
+    port: 9091
+    targetPort: 9091
+  type: ClusterIP

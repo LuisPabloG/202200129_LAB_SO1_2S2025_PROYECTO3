@@ -1,0 +1,151 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: locust-script
+  namespace: proyecto3-202200129
+data:
+  locustfile.py: |
+    import time
+    import json
+    import random
+    from locust import HttpUser, task, between
+
+    # Lista de municipios según enunciado
+    municipalities = ["mixco", "villa nueva", "chinautla", "san jose pinula", "san miguel petapa"]
+
+    class WeatherTweetUser(HttpUser):
+        wait_time = between(1, 3)  # Tiempo de espera entre peticiones (1-3 segundos)
+        
+        @task
+        def send_weather_tweet(self):
+            # Seleccionar municipio según el carnet
+            # Para el carnet 202200129, corresponde "chinautla"
+            municipality = "chinautla"
+            
+            # Generar datos aleatorios de temperatura y humedad realistas
+            temperature = round(random.uniform(15.0, 35.0), 1)  # Entre 15°C y 35°C
+            humidity = round(random.uniform(30.0, 95.0), 1)     # Entre 30% y 95%
+            
+            # Crear el tweet con el formato requerido
+            tweet_data = {
+                "municipality": municipality,
+                "temperature": temperature,
+                "humidity": humidity,
+                "timestamp": int(time.time())
+            }
+            
+            # Enviar la petición POST al endpoint del API de Rust
+            response = self.client.post("/tweet", json=tweet_data)
+            
+            # Registrar el resultado
+            if response.status_code == 200:
+                # Éxito - podemos registrar algunos datos para las métricas
+                response_time = response.elapsed.total_seconds() * 1000  # en milisegundos
+                print(f"Tweet enviado: {municipality} - Temp: {temperature}°C, Hum: {humidity}% - Tiempo: {response_time}ms")
+            else:
+                # Error - registrar para análisis
+                print(f"Error enviando tweet: {response.status_code} - {response.text}")
+
+        @task(3)  # Este task tiene 3 veces más probabilidad que el anterior
+        def send_multiple_tweets(self):
+            # Enviar entre 2 y 5 tweets en una ráfaga
+            num_tweets = random.randint(2, 5)
+            
+            for _ in range(num_tweets):
+                # Usar siempre chinautla para este carnet (202200129)
+                municipality = "chinautla"
+                
+                temperature = round(random.uniform(15.0, 35.0), 1)
+                humidity = round(random.uniform(30.0, 95.0), 1)
+                
+                tweet_data = {
+                    "municipality": municipality,
+                    "temperature": temperature,
+                    "humidity": humidity,
+                    "timestamp": int(time.time())
+                }
+                
+                response = self.client.post("/tweet", json=tweet_data)
+                
+                if response.status_code != 200:
+                    print(f"Error en ráfaga: {response.status_code} - {response.text}")
+                
+                # Pequeña pausa entre tweets de la misma ráfaga
+                time.sleep(random.uniform(0.1, 0.5))
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust
+  namespace: proyecto3-202200129
+  labels:
+    app: locust
+    student: "202200129"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: locust
+  template:
+    metadata:
+      labels:
+        app: locust
+    spec:
+      containers:
+      - name: locust
+        image: locustio/locust:latest
+        ports:
+        - containerPort: 8089
+          name: web
+        - containerPort: 5557
+          name: master
+        env:
+        - name: LOCUST_HOST
+          value: "http://rust-api:8080"  # La URL del servicio Rust API
+        args:
+        - "--locustfile=/mnt/locust/locustfile.py"
+        - "--web-host=0.0.0.0"
+        volumeMounts:
+        - mountPath: /mnt/locust
+          name: locust-script
+      volumes:
+      - name: locust-script
+        configMap:
+          name: locust-script
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: locust
+  namespace: proyecto3-202200129
+spec:
+  ports:
+  - port: 8089
+    targetPort: 8089
+    name: web
+  - port: 5557
+    targetPort: 5557
+    name: master
+  selector:
+    app: locust
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: locust-ingress
+  namespace: proyecto3-202200129
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /locust
+        pathType: Prefix
+        backend:
+          service:
+            name: locust
+            port:
+              number: 8089
