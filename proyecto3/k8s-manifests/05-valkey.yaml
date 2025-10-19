@@ -5,7 +5,7 @@ metadata:
   namespace: weather-system
 spec:
   serviceName: valkey
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: valkey
@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: valkey
-        image: valkey:7-alpine
+        image: redis:7-alpine
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 6379
@@ -32,7 +32,7 @@ spec:
         - name: data
           mountPath: /data
         command:
-        - valkey-server
+        - redis-server
         - "--appendonly"
         - "yes"
         - "--appendfsync"
