@@ -14,42 +14,30 @@ spec:
         app: go-deployment-1
     spec:
       containers:
-      - name: go-service
-        image: ZOT_REGISTRY/go-services-deployment1:latest
+      - name: go-deployment-1
+        image: localhost:5000/go-deployment-1:latest
         imagePullPolicy: Always
         ports:
+        - containerPort: 8081
+          name: http
         - containerPort: 50051
           name: grpc
-        - containerPort: 8081
-          name: rest
         env:
-        - name: GRPC_PORT
-          value: "50051"
-        - name: REST_PORT
-          value: "8081"
-        - name: KAFKA_ADDR
-          value: "kafka:9092"
-        - name: RABBITMQ_ADDR
-          value: "amqp://guest:guest@rabbitmq:5672/"
+        - name: RABBITMQ_HOST
+          value: "rabbitmq"
+        - name: RABBITMQ_PORT
+          value: "5672"
+        - name: VALKEY_HOST
+          value: "valkey-0.valkey"
+        - name: VALKEY_PORT
+          value: "6379"
         resources:
           requests:
             memory: "256Mi"
-            cpu: "250m"
+            cpu: "100m"
           limits:
             memory: "512Mi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8081
-          initialDelaySeconds: 10
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8081
-          initialDelaySeconds: 5
-          periodSeconds: 5
+            cpu: "250m"
 ---
 apiVersion: v1
 kind: Service
@@ -60,10 +48,10 @@ spec:
   selector:
     app: go-deployment-1
   ports:
+  - port: 8081
+    targetPort: 8081
+    name: http
   - port: 50051
     targetPort: 50051
     name: grpc
-  - port: 8081
-    targetPort: 8081
-    name: rest
   type: ClusterIP

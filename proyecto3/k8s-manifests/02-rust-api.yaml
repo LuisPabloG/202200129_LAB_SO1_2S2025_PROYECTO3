@@ -15,35 +15,21 @@ spec:
     spec:
       containers:
       - name: rust-api
-        image: ZOT_REGISTRY/weather-api-rust:latest
+        image: localhost:5000/rust-api:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
           name: http
         env:
-        - name: GRPC_SERVER_ADDR
-          value: "http://go-deployment-1:50051"
-        - name: RUST_LOG
-          value: "info"
+        - name: GO_SERVICE_URL
+          value: "http://go-deployment-1:8081"
         resources:
           requests:
             memory: "256Mi"
-            cpu: "250m"
+            cpu: "100m"
           limits:
             memory: "512Mi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 10
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 5
+            cpu: "250m"
 ---
 apiVersion: v1
 kind: Service
@@ -59,7 +45,7 @@ spec:
     name: http
   type: ClusterIP
 ---
-apiVersion: autoscaling.k8s.io/v2
+apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: rust-api-hpa
