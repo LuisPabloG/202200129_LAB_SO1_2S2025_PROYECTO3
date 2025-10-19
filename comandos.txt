@@ -1,1 +1,3 @@
 kubectl get pods -n weather-system -w
+
+gcloud compute instances list

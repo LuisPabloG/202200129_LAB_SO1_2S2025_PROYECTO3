@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: kafka-consumer
-        image: <your-zot-registry>/kafka-consumer:latest # Replace with your Zot registry path
+        image: 34.46.81.16:5000/kafka-consumer:latest # Replace with your Zot registry path
         env:
         - name: KAFKA_BROKER
           value: "kafka-service:9092"
@@ -39,7 +39,7 @@ spec:
     spec:
       containers:
       - name: rabbitmq-consumer
-        image: <your-zot-registry>/rabbitmq-consumer:latest # Replace with your Zot registry path
+        image: 34.46.81.16:5000/rabbitmq-consumer:latest # Replace with your Zot registry path
         env:
         - name: RABBITMQ_URL
           value: "amqp://guest:guest@rabbitmq-service:5672/"

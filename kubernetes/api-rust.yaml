@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: api-rust
-        image: <your-zot-registry>/api-rust:latest # Replace with your Zot registry path
+        image: 34.46.81.16:5000/api-rust:latest # Replace with your Zot registry path
         ports:
         - containerPort: 8080
 ---
