@@ -42,7 +42,7 @@ metadata:
   name: kafka-consumer
   namespace: weather-system
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app: kafka-consumer
@@ -56,7 +56,7 @@ spec:
         image: redis:7-alpine
         imagePullPolicy: IfNotPresent
         command: ["/bin/sh"]
-        args: ["-c", "sleep infinity"]
+        args: ["-c", "redis-cli -h valkey-0.valkey -p 6379 ping && sleep infinity"]
         env:
         - name: KAFKA_HOST
           value: "kafka"
