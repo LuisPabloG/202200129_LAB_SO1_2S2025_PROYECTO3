@@ -1,53 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: zookeeper
-  namespace: weather-system
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: zookeeper
-  template:
-    metadata:
-      labels:
-        app: zookeeper
-    spec:
-      containers:
-      - name: zookeeper
-        image: confluentinc/cp-zookeeper:7.5.0
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 2181
-          name: client
-        env:
-        - name: ZOOKEEPER_CLIENT_PORT
-          value: "2181"
-        - name: ZOOKEEPER_SYNC_LIMIT
-          value: "2"
-        - name: ZOOKEEPER_INIT_LIMIT
-          value: "5"
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
-            memory: "512Mi"
-            cpu: "250m"
-        livenessProbe:
-          tcpSocket:
-            port: 2181
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          tcpSocket:
-            port: 2181
-          initialDelaySeconds: 20
-          periodSeconds: 5
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: kafka
   namespace: weather-system
 spec:
@@ -62,30 +15,38 @@ spec:
     spec:
       containers:
       - name: kafka
-        image: confluentinc/cp-kafka:7.5.0
+        image: apache/kafka:3.7.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9092
           name: broker
+        - containerPort: 29092
+          name: controller
         env:
-        - name: KAFKA_BROKER_ID
+        - name: KAFKA_NODE_ID
           value: "1"
-        - name: KAFKA_ZOOKEEPER_CONNECT
-          value: "zookeeper:2181"
+        - name: KAFKA_PROCESS_ROLES
+          value: "broker,controller"
+        - name: KAFKA_LISTENERS
+          value: "PLAINTEXT://kafka:9092,CONTROLLER://kafka:29092"
         - name: KAFKA_ADVERTISED_LISTENERS
           value: "PLAINTEXT://kafka:9092"
         - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
-          value: "PLAINTEXT:PLAINTEXT"
+          value: "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT"
         - name: KAFKA_INTER_BROKER_LISTENER_NAME
           value: "PLAINTEXT"
-        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
-          value: "1"
+        - name: KAFKA_CONTROLLER_LISTENER_NAMES
+          value: "CONTROLLER"
+        - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+          value: "1@kafka:29092"
         - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
           value: "true"
         - name: KAFKA_LOG_RETENTION_HOURS
           value: "168"
-        - name: KAFKA_LOG4J_ROOT_LOGLEVEL
-          value: "WARN"
+        - name: CLUSTER_ID
+          value: "MkQkYTEwNTc0MTZhNDJjODcyOA"
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "1"
         resources:
           requests:
             memory: "512Mi"
@@ -109,20 +70,6 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: zookeeper
-  namespace: weather-system
-spec:
-  selector:
-    app: zookeeper
-  ports:
-  - port: 2181
-    targetPort: 2181
-    name: client
-  type: ClusterIP
----
-apiVersion: v1
-kind: Service
-metadata:
   name: kafka
   namespace: weather-system
 spec:
@@ -132,4 +79,7 @@ spec:
   - port: 9092
     targetPort: 9092
     name: broker
+  - port: 29092
+    targetPort: 29092
+    name: controller
   type: ClusterIP
