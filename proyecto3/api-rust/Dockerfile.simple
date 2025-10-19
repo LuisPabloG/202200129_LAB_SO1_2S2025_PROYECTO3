@@ -1,9 +1,0 @@
-FROM rust:latest as builder
-WORKDIR /app
-RUN echo 'fn main() { println!("Rust API Running"); }' > src/main.rs
-RUN cargo build --release 2>/dev/null || echo "Simple build"
-
-FROM debian:bookworm-slim
-COPY --from=builder /app/target/release/main /usr/local/bin/ 2>/dev/null || echo "Copy failed"
-EXPOSE 8080
-CMD ["sh", "-c", "echo 'Rust API Service Running on port 8080' && nc -l -p 8080 || sleep infinity"]

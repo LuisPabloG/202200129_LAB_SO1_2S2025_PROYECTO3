@@ -1,0 +1,39 @@
+# go-grpc-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-grpc-server
+spec:
+  replicas: 1 # Can be scaled to 1 or 2 for testing
+  selector:
+    matchLabels:
+      app: go-grpc-server
+  template:
+    metadata:
+      labels:
+        app: go-grpc-server
+    spec:
+      containers:
+      - name: go-grpc-server
+        image: <your-zot-registry>/go-grpc-server:latest # Replace with your Zot registry path
+        ports:
+        - containerPort: 50051
+        env:
+        - name: KAFKA_BROKER
+          value: "kafka-service:9092"
+        - name: RABBITMQ_URL
+          value: "amqp://guest:guest@rabbitmq-service:5672/"
+---
+# go-grpc-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-service-grpc
+spec:
+  selector:
+    app: go-grpc-server
+  ports:
+    - protocol: TCP
+      port: 50051
+      targetPort: 50051
+  type: ClusterIP
