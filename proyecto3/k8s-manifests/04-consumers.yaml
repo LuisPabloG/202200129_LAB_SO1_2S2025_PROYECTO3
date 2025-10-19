@@ -15,10 +15,10 @@ spec:
     spec:
       containers:
       - name: rabbitmq-consumer
-        image: busybox:latest
+        image: redis:7-alpine
         imagePullPolicy: IfNotPresent
         command: ["/bin/sh"]
-        args: ["-c", "while true; do echo 'RabbitMQ Consumer running'; sleep 30; done"]
+        args: ["-c", "redis-cli -h valkey-0.valkey -p 6379 ping && sleep infinity"]
         env:
         - name: RABBITMQ_HOST
           value: "rabbitmq"
@@ -53,10 +53,10 @@ spec:
     spec:
       containers:
       - name: kafka-consumer
-        image: busybox:latest
+        image: redis:7-alpine
         imagePullPolicy: IfNotPresent
         command: ["/bin/sh"]
-        args: ["-c", "while true; do echo 'Kafka Consumer disabled'; sleep 30; done"]
+        args: ["-c", "sleep infinity"]
         env:
         - name: KAFKA_HOST
           value: "kafka"
