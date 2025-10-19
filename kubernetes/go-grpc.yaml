@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: go-grpc-server
-        image: 34.46.81.16:5000/go-grpc-server:latest # Replace with your Zot registry path
+        image: 34.46.81.16:5000/go-grpc-server:latest
         ports:
         - containerPort: 50051
         env:
