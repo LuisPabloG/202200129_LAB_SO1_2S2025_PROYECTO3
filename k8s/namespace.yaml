@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: proyecto3-202200129
-  labels:
-    app: weather-tweets
-    student: "202200129"
