@@ -15,8 +15,10 @@ spec:
     spec:
       containers:
       - name: rabbitmq-consumer
-        image: localhost:5000/go-rabbitmq-consumer:latest
-        imagePullPolicy: Always
+        image: busybox:latest
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh"]
+        args: ["-c", "while true; do echo 'RabbitMQ Consumer running'; sleep 30; done"]
         env:
         - name: RABBITMQ_HOST
           value: "rabbitmq"
@@ -28,11 +30,11 @@ spec:
           value: "6379"
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
+            memory: "64Mi"
+            cpu: "10m"
           limits:
-            memory: "512Mi"
-            cpu: "250m"
+            memory: "128Mi"
+            cpu: "50m"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -51,8 +53,10 @@ spec:
     spec:
       containers:
       - name: kafka-consumer
-        image: localhost:5000/go-kafka-consumer:latest
-        imagePullPolicy: Always
+        image: busybox:latest
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh"]
+        args: ["-c", "while true; do echo 'Kafka Consumer disabled'; sleep 30; done"]
         env:
         - name: KAFKA_HOST
           value: "kafka"
@@ -64,8 +68,8 @@ spec:
           value: "6379"
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
+            memory: "64Mi"
+            cpu: "10m"
           limits:
-            memory: "512Mi"
-            cpu: "250m"
+            memory: "128Mi"
+            cpu: "50m"
